@@ -1,0 +1,67 @@
+version: "3.9"
+
+services:
+  db:
+    image: percona/percona-server:8.4.5
+    container_name: percona
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass       # Change this root password
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wpuser
+      MYSQL_PASSWORD: wppass              # Change this user password
+    volumes:
+      - percona_data:/var/lib/mysql
+    networks:
+      - app-network
+
+  wordpress:
+    image: wordpress:6.5.5-fpm-alpine     # Use any compatible version
+    container_name: wordpress
+    restart: unless-stopped
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: wpuser
+      WORDPRESS_DB_PASSWORD: wppass
+    volumes:
+      - ./data/wordpress:/var/www/html
+    depends_on:
+      - db
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep php-fpm || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  caddy:
+    image: caddy:alpine
+    container_name: caddy
+    restart: unless-stopped
+    depends_on:
+      wordpress:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./data/wordpress:/var/www/html:ro
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./data/caddy_data:/data
+      - ./data/caddy_config:/config
+    networks:
+      - app-network
+    command: ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
+    read_only: true
+    tmpfs:
+      - /tmp
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  percona_data:
