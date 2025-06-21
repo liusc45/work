@@ -16,8 +16,8 @@ This repo contains a minimal and production-ready setup for running **WordPress*
 curl -fsSL https://test.docker.com -o test-docker.sh && sudo sh test-docker.sh
 
 # Clone this repo
-git clone https://github.com/youruser/yourrepo.git
-cd yourrepo
+g[it clone https://github.com/youruser/yourrepo.git](https://github.com/liusc45/work.git)
+cd  work	
 
 # Launch the stack
 docker compose up -d
